@@ -1,6 +1,6 @@
 # Welcome to TaroccDrop!
 
-![alt text](TaroccDrop.png)
+![alt text](./website/TaroccDrop.png)
 
 Say no to Apple senseless supremacy. Enable people to share stuff between different OS!
 
