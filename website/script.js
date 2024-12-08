@@ -1,43 +1,46 @@
 let socket = null;
 
 window.onload = function () {
-    if (window.location.pathname.endsWith('/communication.html')) {
-        const username = localStorage.getItem('username');
-        socket = new WebSocket(location.href.split(":")[0] === 'https' ? 'wss' : 'ws' + '://' + location.hostname + ':8080');
-        // Event listener for when the connection is open
-        socket.addEventListener('open', () => {
-            console.log('WebSocket connection established!');
-            socket.send(JSON.stringify({action: 'login', username: username}));
-        });
-
-        // Event listener for receiving messages from the server
-        socket.addEventListener('message', (event) => {
-            console.log('Message from server: ', event.data);
-            parserActualizer(parseMessage(event.data));
-        });
-
-        // Event listener for when the connection is closed
-        socket.addEventListener('close', () => {
-            console.log('WebSocket connection closed!');
-        });
-
-        // Event listener for error
-        socket.addEventListener('error', (error) => {
-            console.error('WebSocket error: ', error);
-        });
+    if (!window.location.pathname.endsWith('/index.html')) {
+        return;
     }
+    const username = localStorage.getItem('username');
+    socket = new WebSocket(location.href.split(":")[0] === 'https' ? 'wss' : 'ws' + '://' + location.hostname + ':8080');
+    // Event listener for when the connection is open
+    socket.addEventListener('open', () => {
+        console.log('WebSocket connection established!');
+    });
+
+    // Event listener for receiving messages from the server
+    socket.addEventListener('message', (event) => {
+        console.log('Message from server: ', event.data);
+        parserActualizer(parseMessage(event.data));
+    });
+
+    // Event listener for when the connection is closed
+    socket.addEventListener('close', () => {
+        console.log('WebSocket connection closed!');
+    });
+
+    // Event listener for error
+    socket.addEventListener('error', (error) => {
+        console.error('WebSocket error: ', error);
+    });
 }
 
 
-
+ 
 function login() {
-    const username = document.getElementById('username').value;
-    if (username) {
-        localStorage.setItem('username', username);
-        window.location.href = './communication.html';
-    } else {
-        console.log('Please enter a username');
+    if (username){
+        const username = document.getElementById('username').value;
+        socket.send(JSON.stringify({action: 'login', username: username}));
     }
+}
+
+function logout(){
+    socket.send(JSON.stringify({action: 'logout', username: localStorage.getItem('username')}));
+    localStorage.removeItem('username');
+    document.body.innerHTML = indexHtml;
 }
 
 
@@ -54,9 +57,17 @@ function parseMessage(message) {
 function parserActualizer(message) {
     switch (message.action){
         case 'login':
-            if (message.status === 'error') {
-                console.error('Error logging in', message.message);
-                document.getElementById('username').value = 'Invalid username';
+            switch (message.status)  {
+                case 'error':
+                    console.error('Error logging in', message.message);
+                    document.getElementById('usernameError').setAttribute('style', 'display: block; color : red; text-align: center;');
+                    document.getElementById('username').value = 'Invalid username';
+                    break;
+                case 'success':
+                    localStorage.setItem('username', username);
+                    //window.location.href = './communication.html';
+                    document.body.innerHTML = commHtml;
+                    break;
             }
 
         break;
@@ -171,3 +182,42 @@ function blobToBase64(blob) {
         reader.onerror = reject;
     });
 }
+
+
+
+
+commHtml = '<body style="display: flex; align-items: center; flex-direction: column; gap: 3vh; background-image: url(noapple.png); background-repeat: repeat;"> \
+    \
+    <div style="background-color: white; gap: 3vh; display: flex; flex-direction: column; \
+                border-style: solid; border-width: 5px; border-color: black; border-radius: 10px;"> \
+        <h1 style="text-align: center;">Pick a file and a bully</h1> \
+        \
+        <img src="./TaroccDrop.png" alt="logo" width="200px" style="align-self: center;"> \
+        \
+        <input style="width: 20vw;" type="file" id="files" multiple> \
+        \
+        <h1 style="text-align: center;">Available Users</h1> \
+        <ul id="userList"></ul> \
+        \
+        <h1 style="text-align: center;">Pending downloads</h1> \
+        <ul id="pendingDownloads"></ul> \
+    </div> \
+\
+</body>';
+
+indexHtml = '<body style="display: flex; align-items: center; flex-direction: column; gap: 3vh; background-image: url(noapple.png); background-repeat: repeat;">\
+\
+    <div style="background-color: white; gap: 3vh; display: flex; flex-direction: column; \
+                border-style: solid; border-width: 5px; border-color: black; border-radius: 10px;">\
+\
+        <h1 style="text-align: center;">Welcome to TaroccDrop</h1>\
+        \
+        <img src="./TaroccDrop.png" alt="logo" width="200px" style="align-self: center;">\
+        \
+        <p id="usernameError" style="text-align : center; color: red; display: none;">Invalid Username</p>\
+        <input style="width: 20vw; display: block;" type="text" id="username" placeholder="Username" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">\
+        <button style="width: 20vw; display: block;" class="bg-blue-500 hover:bg-blue-400 text-white font-bold py-2 px-4 border-b-4 border-blue-700 hover:border-blue-500 rounded" onclick="login()">Login</button>\
+        \
+    </div>\
+\
+</body>';

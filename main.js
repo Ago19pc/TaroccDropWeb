@@ -11,6 +11,7 @@ const users = {};
 wss.on('connection', (ws) => {
   console.log('Client connected');
     ws.on('message', (message) => {
+        console.log('Message received', JSON.parse(message));
         message = parseMessage(message);
         const username = Object.keys(users).find(username => users[username] === ws);
         switch(message.action) {
@@ -26,6 +27,7 @@ wss.on('connection', (ws) => {
                         updateList();
                     }
                 }
+                break;
             case 'drop':
                 console.log('File dropped');
                 if (message.target != undefined && users[message.target] != undefined){
@@ -35,6 +37,7 @@ wss.on('connection', (ws) => {
                         size: message.size,
                         data: message.data
                     }));
+                    console.log(message.from, ' sent file to ', message.target);
                 } else {
                     if (message.target == undefined){
                         console.error('No target specified');
@@ -42,6 +45,15 @@ wss.on('connection', (ws) => {
                         console.error('Target not found');
                     }
                 }
+                break;
+            case 'logout':
+                if (message.username != undefined){
+                    console.log('User logged-out', username);
+                    delete users[username];
+                }
+                break;
+            default:
+                console.error('Invalid action', message.action);
                 break;
         }
         
